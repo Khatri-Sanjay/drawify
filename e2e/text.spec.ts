@@ -54,6 +54,47 @@ test.beforeEach(async ({ page }) => {
 	await expect(page.getByRole('button', { name: 'Projects', exact: true })).toBeEnabled();
 });
 
+test('quick formatting keeps the caret ready and typing near an edge does not move the insertion point', async ({
+	page,
+}) => {
+	await openText(page, 700, 180);
+	const input = editor(page);
+	await input.fill('Start');
+	const before = await input.evaluate((node) => node.offsetLeft);
+	await input.press('End');
+	await page.getByRole('button', { name: 'Quick bold', exact: true }).click();
+	await expect(input).toBeFocused();
+	await page.keyboard.type(
+		' and keep typing a much longer sentence across the edge of the canvas',
+	);
+	await expect(input).toHaveValue(
+		'Start and keep typing a much longer sentence across the edge of the canvas',
+	);
+	expect(await input.evaluate((node) => node.offsetLeft)).toBe(before);
+	await page.getByLabel('Quick font size', { exact: true }).fill('36');
+	await page.getByLabel('Quick font size', { exact: true }).press('Enter');
+	await expect(input).toBeFocused();
+	await expect(input).toHaveCSS('font-size', '36px');
+	await page.getByRole('button', { name: 'Finish text', exact: true }).click();
+	await expect(input).toHaveCount(0);
+	const saved = JSON.parse((await projectBytes(page)).toString());
+	expect(saved.scene.objects).toHaveLength(1);
+	expect(saved.scene.objects[0].config).toMatchObject({ fontSize: 36, fontWeight: 'bold' });
+});
+
+test('long drafts scroll within the editor and transparent text remains readable while editing', async ({
+	page,
+}) => {
+	const props = await openText(page);
+	await editor(page).fill('An editable line\n'.repeat(50));
+	await props.getByLabel('Text opacity', { exact: true }).fill('0');
+	await expect(editor(page)).toHaveCSS('opacity', '1');
+	expect((await editor(page).boundingBox())!.height).toBeLessThanOrEqual(365);
+	expect(await editor(page).evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
+	await page.getByRole('button', { name: 'Cancel editing text', exact: true }).click();
+	expect(JSON.parse((await projectBytes(page)).toString()).scene.objects).toHaveLength(0);
+});
+
 test('types at the canvas position without a popup, starts black, and previews sidebar formatting live', async ({
 	page,
 }) => {

@@ -51,6 +51,7 @@ References: [Tailwind Angular installation](https://tailwindcss.com/docs/install
 
 ## Features
 
+- Inline text editing includes a floating toolbar for bold, italic, underline, size, color, Done, and Cancel. Formatting buttons return focus to the existing caret so typing can continue immediately. New text wraps to the available canvas width and keeps its insertion point as it grows; long drafts scroll inside the editor. Text remains fully visible while editing, with the chosen opacity applied on completion.
 - Brush studio includes Normal, Sketchy, Square, Spray, Calligraphy, Charcoal, Neon, Dotted, Watercolor, Ink, Marker, and Emboss. Choose a visual preset from the categorized library, then adjust color, size, flow, and the available spacing or nib-angle controls with a live stroke preview. Presets keep your color and opacity and supply a suitable starting size. Select an existing brush stroke to change its style, flow, color, or size with undo support.
 - Textured strokes store a random seed per stroke, so undo/redo, autosave, and editable project files preserve the exact texture. Canvas and SVG use the same brush primitives; each complete stroke remains one editable object and one undo step.
 - Pencil (fixed 1 px), adjustable brush and eraser, line, rectangle, circle, ellipse, text, and canvas color picker.

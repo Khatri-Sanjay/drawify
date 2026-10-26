@@ -80,6 +80,11 @@ import { TextFormatting } from './text-formatting';
 					(input)="patch({ opacity: +opacity.value / 100 })"
 			/></label>
 		</fieldset>
+		@if (engine.textRequest()) {
+			<p class="text-xs text-slate-500">
+				Text stays fully visible while typing. Your opacity is applied when you finish.
+			</p>
+		}
 		<p class="rounded-xl bg-violet-50 p-3 text-xs leading-5 text-violet-700">
 			Text stays editable after you finish. Use Select to move or resize it; all changes
 			support undo.
@@ -125,5 +130,11 @@ export class TextProperties {
 			if (patch.stroke !== undefined) this.state.textColor.set(patch.stroke);
 			if (patch.opacity !== undefined) this.state.textOpacity.set(patch.opacity);
 		}
+		if (this.engine.textRequest() && document.activeElement instanceof HTMLButtonElement)
+			queueMicrotask(() =>
+				document
+					.querySelector<HTMLTextAreaElement>('.canvas-text-input')
+					?.focus({ preventScroll: true }),
+			);
 	}
 }

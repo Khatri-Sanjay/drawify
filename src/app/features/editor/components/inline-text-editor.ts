@@ -4,12 +4,89 @@ import { EditorState } from '../services/editor-state';
 import { ProjectSession } from '../services/project-session';
 import { FONT_STACKS, layoutText, textLineBox, textStyle } from '../services/text-layout';
 import { objectMatrix } from '../services/drawing-geometry';
+import { ToolConfiguration } from '../models/drawing';
 
 @Component({
 	selector: 'app-inline-text-editor',
 	template: `
 		@if (engine.textRequest(); as request) {
 			@if (geometry(); as box) {
+				<div
+					class="text-quick-controls"
+					data-text-controls
+					aria-label="Quick text controls"
+					[style.left.px]="box.toolbarX"
+					[style.top.px]="box.toolbarY"
+				>
+					<button
+						type="button"
+						aria-label="Quick bold"
+						title="Bold (Ctrl/Command B)"
+						[attr.aria-pressed]="style().fontWeight === 'bold'"
+						(click)="
+							format({
+								fontWeight: style().fontWeight === 'bold' ? 'normal' : 'bold',
+							})
+						"
+					>
+						<b>B</b>
+					</button>
+					<button
+						type="button"
+						aria-label="Quick italic"
+						title="Italic (Ctrl/Command I)"
+						[attr.aria-pressed]="style().fontStyle === 'italic'"
+						(click)="
+							format({
+								fontStyle: style().fontStyle === 'italic' ? 'normal' : 'italic',
+							})
+						"
+					>
+						<i>I</i>
+					</button>
+					<button
+						type="button"
+						aria-label="Quick underline"
+						title="Underline (Ctrl/Command U)"
+						[attr.aria-pressed]="style().underline"
+						(click)="format({ underline: !style().underline })"
+					>
+						<u>U</u>
+					</button>
+					<input
+						#quickSize
+						type="number"
+						min="6"
+						max="512"
+						aria-label="Quick font size"
+						[value]="style().fontSize"
+						(change)="size(quickSize)"
+					/>
+					<input
+						#quickColor
+						type="color"
+						aria-label="Quick text color"
+						title="Text color"
+						[value]="request.config.stroke"
+						(input)="engine.updateTextDraft({ stroke: quickColor.value })"
+					/>
+					<button
+						type="button"
+						class="finish"
+						aria-label="Finish text"
+						(click)="finish()"
+					>
+						Done
+					</button>
+					<button
+						type="button"
+						aria-label="Cancel editing text"
+						title="Cancel (Escape)"
+						(click)="cancel()"
+					>
+						×
+					</button>
+				</div>
 				<div class="inline-text-editor" [style.transform]="box.matrix">
 					<textarea
 						#content
@@ -34,8 +111,7 @@ import { objectMatrix } from '../services/drawing-geometry';
 						[style.lineHeight]="style().lineHeight"
 						[style.whiteSpace]="style().textWidth ? 'pre-wrap' : 'pre'"
 						[style.color]="request.config.stroke"
-						[style.caretColor]="request.config.stroke"
-						[style.opacity]="request.config.opacity"
+						[style.caretColor]="'#7254c9'"
 						(input)="engine.updateTextDraft({ text: content.value })"
 						(keydown)="shortcut($event)"
 					></textarea>
@@ -44,6 +120,55 @@ import { objectMatrix } from '../services/drawing-geometry';
 		}
 	`,
 	styles: `
+		.text-quick-controls {
+			position: absolute;
+			z-index: 25;
+			display: flex;
+			align-items: center;
+			gap: 3px;
+			padding: 5px;
+			border: 1px solid #ddd6fe;
+			border-radius: 12px;
+			background: white;
+			box-shadow: 0 5px 18px rgb(30 20 60 / 0.14);
+			font:
+				13px Arial,
+				sans-serif;
+			color: #334155;
+			touch-action: auto;
+		}
+		.text-quick-controls button {
+			min-width: 30px;
+			height: 32px;
+			border-radius: 6px;
+			cursor: pointer;
+		}
+		.text-quick-controls button:hover,
+		.text-quick-controls [aria-pressed='true'] {
+			background: #ede9fe;
+			color: #6d28d9;
+		}
+		.text-quick-controls input[type='number'] {
+			width: 50px;
+			height: 32px;
+			border: 1px solid #e2e8f0;
+			border-radius: 6px;
+			padding: 3px;
+		}
+		.text-quick-controls input[type='color'] {
+			width: 28px;
+			height: 30px;
+			cursor: pointer;
+		}
+		.text-quick-controls .finish {
+			background: #7254c9;
+			color: white;
+			padding: 0 8px;
+		}
+		.text-quick-controls :focus-visible {
+			outline: 2px solid #7254c9;
+			outline-offset: 2px;
+		}
 		.inline-text-editor {
 			position: absolute;
 			left: 0;
@@ -69,7 +194,7 @@ import { objectMatrix } from '../services/drawing-geometry';
 			box-shadow: 0 0 0 4px rgb(255 255 255 / 0.8);
 			background: transparent;
 			resize: none;
-			overflow: hidden;
+			overflow: auto;
 			overflow-wrap: anywhere;
 			tab-size: 4;
 			cursor: text;
@@ -114,11 +239,20 @@ export class InlineTextEditor {
 						? width
 						: 0),
 			zoom = this.state.zoom();
+		const matrix = objectMatrix(object),
+			y = object.points[0].y - line.baseline;
+		const left = (matrix[0] * x + matrix[2] * y + matrix[4]) * zoom;
+		const top = (matrix[1] * x + matrix[3] * y + matrix[5]) * zoom;
 		return {
 			x,
-			y: object.points[0].y - line.baseline,
+			y,
 			width,
-			height: Math.max(line.height, layout.lines.length * line.height) + 4,
+			height: Math.min(
+				360 / zoom,
+				Math.max(line.height, layout.lines.length * line.height) + 4,
+			),
+			toolbarX: Math.max(0, Math.min(left, this.state.dimensions().width * zoom - 290)),
+			toolbarY: Math.max(-44, top - 52),
 			matrix: `matrix(${objectMatrix(object)
 				.map((v) => v * zoom)
 				.join(',')})`,
@@ -129,6 +263,23 @@ export class InlineTextEditor {
 			const content = this.content()?.nativeElement;
 			if (content) queueMicrotask(() => content.focus({ preventScroll: true }));
 		});
+	}
+	format(patch: Partial<ToolConfiguration>): void {
+		this.engine.updateTextDraft(patch);
+		this.content()?.nativeElement.focus({ preventScroll: true });
+	}
+	size(input: HTMLInputElement): void {
+		if (input.validity.valid && Number.isFinite(input.valueAsNumber))
+			this.format({ fontSize: input.valueAsNumber });
+		else input.value = String(this.style().fontSize);
+	}
+	finish(): void {
+		this.engine.finishText();
+		this.focusCanvas();
+	}
+	cancel(): void {
+		this.engine.cancelText();
+		this.focusCanvas();
 	}
 	private focusCanvas(): void {
 		document

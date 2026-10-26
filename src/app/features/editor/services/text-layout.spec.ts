@@ -185,13 +185,19 @@ describe('Text layout and editable insertion', () => {
 		const object = engine.objects()[0];
 		if (object.kind === 'draw') expect(object.config.text).toBe('First\nSecond');
 	});
-	it('keeps newly inserted text visible when placed near a canvas edge', () => {
+	it('keeps the insertion point stable near an edge and offers an automatic wrap width', () => {
 		const engine = TestBed.inject(DrawingEngine);
 		engine.requestText({ x: 1190, y: 790 });
+		expect(engine.textRequest()?.config.textWidth).toBe(40);
+		engine.updateTextDraft({ text: 'A short line' });
+		const before = worldBounds(engine.textPreview()!);
+		engine.updateTextDraft({
+			text: 'A substantially longer line that should never move its insertion point',
+		});
+		expect(worldBounds(engine.textPreview()!).x).toBeCloseTo(before.x);
 		engine.applyText(config({ text: 'Visible text', fontSize: 40 }));
 		const b = worldBounds(engine.objects()[0]);
-		expect(b.x + b.width).toBeLessThanOrEqual(1200);
-		expect(b.y + b.height).toBeLessThanOrEqual(800);
+		expect(b.x).toBeCloseTo(1190);
 	});
 	it('exports wrapped text, font properties, underline and escaped content as SVG', () => {
 		const engine = TestBed.inject(DrawingEngine);

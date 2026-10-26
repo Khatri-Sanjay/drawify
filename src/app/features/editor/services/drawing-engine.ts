@@ -648,6 +648,19 @@ export class DrawingEngine {
 						),
 			config: {
 				...(object?.kind === 'draw' ? object.config : this.state.textConfig()),
+				...(!object
+					? {
+							textWidth: Math.max(
+								40,
+								Math.min(
+									this.state.textConfig().textWidth || 480,
+									this.state.dimensions().width -
+										(point?.x ?? this.state.dimensions().width / 3) -
+										16,
+								),
+							),
+						}
+					: {}),
 				tool: 'text',
 			},
 			...(id ? { id } : {}),
@@ -689,10 +702,8 @@ export class DrawingEngine {
 		}
 		const point = { ...request.point };
 		point.y += layoutText(config, { x: 0, y: 0 }).ascent;
-		const bounds = layoutText(config, point).bounds,
-			dimensions = this.state.dimensions();
-		point.x += Math.max(0, Math.min(bounds.x, dimensions.width - bounds.width)) - bounds.x;
-		point.y += Math.max(0, Math.min(bounds.y, dimensions.height - bounds.height)) - bounds.y;
+		// Keep the insertion point stable as the user types or changes the font.
+		// Moving the entire paragraph to fit its new bounds makes the caret jump.
 		return {
 			id: 'text-preview',
 			name: 'text',
