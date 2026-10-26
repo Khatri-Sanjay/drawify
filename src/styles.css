@@ -1,3 +1,88 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import 'tailwindcss';
+@theme {
+	--font-sans: 'Inter', 'Segoe UI', sans-serif;
+	--color-violet-600: #7254c9;
+	--color-violet-700: #5d40ad;
+}
+@layer base {
+	body {
+		margin: 0;
+		color: #25283d;
+		font-family: var(--font-sans);
+	}
+	button,
+	a,
+	input,
+	select {
+		-webkit-tap-highlight-color: transparent;
+	}
+	button,
+	select {
+		cursor: pointer;
+	}
+	button:disabled {
+		cursor: default;
+		opacity: 0.35;
+	}
+	:focus-visible {
+		outline: 3px solid #a78bfa;
+		outline-offset: 3px;
+	}
+	svg {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
+}
+@layer components {
+	.button-primary {
+		@apply flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-violet-700;
+	}
+	.button-secondary {
+		@apply flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50;
+	}
+	.icon-button {
+		@apply flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100;
+	}
+	.tool-button {
+		@apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-violet-50 hover:text-violet-600;
+	}
+	.tool-button.active {
+		@apply bg-violet-100 text-violet-700 ring-1 ring-violet-200;
+	}
+	.eyebrow {
+		@apply text-[10px] font-semibold tracking-[0.18em] text-violet-600;
+	}
+	.section-label {
+		@apply text-xs font-semibold text-slate-600;
+	}
+	.field {
+		@apply w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm font-normal;
+	}
+	.color-input {
+		@apply mt-2 block h-10 w-full rounded-lg border border-slate-200 bg-white p-1;
+	}
+	.zoom-button {
+		@apply flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-base hover:bg-slate-100;
+	}
+	.modal {
+		@apply m-auto w-[min(92vw,420px)] rounded-2xl border-0 p-6 shadow-2xl;
+	}
+	.layer-action {
+		@apply rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50;
+	}
+}
+.gallery-modal {
+	width: min(92vw, 900px);
+	max-height: 85dvh;
+	overflow-y: auto;
+}
+.workspace {
+	background-color: #f1f2f5;
+	background-image: radial-gradient(#d9dbe3 0.8px, transparent 0.8px);
+	background-size: 16px 16px;
+}
+dialog::backdrop {
+	background: rgb(25 20 45 / 0.35);
+	backdrop-filter: blur(3px);
+}
